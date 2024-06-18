@@ -80,6 +80,8 @@ function btnKT_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 % Obtener datos de los edits y convertir a radianes
 % Obtener datos de los edits y convertir a radianes
+
+% Obtener datos de los edits y convertir a radianes
 q1 = str2double(get(handles.edtQ1, 'String'));
 q2 = str2double(get(handles.edtQ2, 'String'));
 q3 = str2double(get(handles.edtQ3, 'String'));
@@ -114,41 +116,58 @@ RB.plot(q, 'workspace', workspace, 'delay', 0);
 % Cinemática Directa
 syms theta d a alpha_ real
 A = [cos(theta), -sin(theta)*cos(alpha_), sin(theta)*sin(alpha_), a*cos(theta);
-     sin(theta), cos(theta)*cos(alpha_), -cos(theta)*sin(alpha_), a*sin(theta);
-     0, sin(alpha_), cos(alpha_), d;
-     0, 0, 0, 1];
+    sin(theta), cos(theta)*cos(alpha_), -cos(theta)*sin(alpha_), a*sin(theta);
+    0, sin(alpha_), cos(alpha_), d;
+    0, 0, 0, 1];
 
 % Definir los parámetros DH para cada articulación
-A01 = subs(A, {theta, d, a, alpha_}, {q1, L1, L2, pi/2});
-A12 = subs(A, {theta, d, a, alpha_}, {q2, 0, L3, 0});
-A23 = subs(A, {theta, d, a, alpha_}, {q3, 0, L4, 0});
+theta1 = q1; d1 = L1; a1 = L2; alpha1 = pi/2;
+theta2 = q2; d2 = 0; a2 = L3; alpha2 = 0;
+theta3 = q3; d3 = 0; a3 = L4; alpha3 = 0;
 
-% Matriz de transformación total
-T = simplify(A01 * A12 * A23);
+% Matrices de transformación homogénea
+A01 = subs(A, {theta, d, a, alpha_}, {theta1, d1, a1, alpha1});
+A12 = subs(A, {theta, d, a, alpha_}, {theta2, d2, a2, alpha2});
+A23 = subs(A, {theta, d, a, alpha_}, {theta3, d3, a3, alpha3});
 
-% Extraer las posiciones
-Kpx = double(T(1, 4));
-Kpy = double(T(2, 4));
-Kpz = double(T(3, 4));
-P = [Kpx; Kpy; Kpz];
+% Matriz de transformación homogénea completa
+T = double(A01 * A12 * A23);
+
+% Convertir la matriz T a una matriz de celdas para usar HTML
+T_data = cell(size(T));
+for i = 1:size(T,1)
+    for j = 1:size(T,2)
+        if (i == 1 && j == 4) || (i == 2 && j == 4) || (i == 3 && j == 4)
+            T_data{i, j} = ['<html><font color="blue">' num2str(T(i, j)) '</font></html>'];
+        elseif (i >= 1 && i <= 3) && (j >= 1 && j <= 3)
+            T_data{i, j} = ['<html><font color="orange">' num2str(T(i, j)) '</font></html>'];
+        else
+            T_data{i, j} = num2str(T(i, j));
+        end
+    end
+end
+
+% Mostrar la matriz T en la uitableMatrizTH
+set(handles.uitableMatrizTH, 'Data', T_data);
+
+% Convertir theta1, theta2, theta3 a grados para la tabla
+theta1_deg = rad2deg(theta1);
+theta2_deg = rad2deg(theta2);
+theta3_deg = rad2deg(theta3);
+
+% Mostrar los parámetros DH en la uitableParametrosDH
+parametros_DH_data = {
+    theta1_deg, d1, a1, alpha1;
+    theta2_deg, d2, a2, alpha2;
+    theta3_deg, d3, a3, alpha3
+};
+set(handles.uitableParametrosDH, 'Data', parametros_DH_data);
 
 % Mostrar los resultados en la consola
 disp('Posición calculada (Cinemática Directa):');
-disp(['x: ', num2str(Kpx)]);
-disp(['y: ', num2str(Kpy)]);
-disp(['z: ', num2str(Kpz)]);
-
-% Mostrar la matriz T en la uitableMatrizTH
-T_data = double(T); % Convertir T a una matriz numérica
-set(handles.uitableMatrizTH, 'Data', T_data); % Actualizar los datos en la uitable
-
-% --- Executes on button press in btnHome.
-function btnHome_Callback(hObject, eventdata, handles)
-% hObject    handle to btnHome (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-
+disp(['x: ', num2str(T(1,4))]);
+disp(['y: ', num2str(T(2,4))]);
+disp(['z: ', num2str(T(3,4))]);
 
 function edtX_Callback(hObject, eventdata, handles)
 % hObject    handle to edtX (see GCBO)
