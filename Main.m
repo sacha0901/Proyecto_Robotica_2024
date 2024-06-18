@@ -51,6 +51,12 @@ function Main_OpeningFcn(hObject, eventdata, handles, varargin)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 % varargin   command line arguments to Main (see VARARGIN)
+% Definir las longitudes de los eslabones
+    handles.L1 = 129;
+    handles.L2 = 14;
+    handles.L3 = 120;
+    handles.L4 = 122;
+    handles.l = [handles.L1; handles.L2; handles.L3; handles.L4];
 
 % Choose default command line output for Main
 handles.output = hObject;
@@ -90,19 +96,13 @@ q1 = deg2rad(q1);
 q2 = deg2rad(q2);
 q3 = deg2rad(q3);
 
-% Longitudes de los eslabones
-L1 = 129;
-L2 = 14;
-L3 = 120;
-L4 = 122;
-
 % Configuración de las articulaciones
 q = [q1 q2 q3];
 
 % Crear enlaces con parámetros DH
-L(1) = Link([0 L1 L2 pi/2 0]);
-L(2) = Link([0 0 L3 0 0]);
-L(3) = Link([0 0 L4 0 0]);
+L(1) = Link([0 handles.L1 handles.L2 pi/2 0]);
+L(2) = Link([0 0 handles.L3 0 0]);
+L(3) = Link([0 0 handles.L4 0 0]);
 RB = SerialLink(L, 'name', 'MiRobot');
 
 % Definir el espacio de trabajo
@@ -121,9 +121,9 @@ A = [cos(theta), -sin(theta)*cos(alpha_), sin(theta)*sin(alpha_), a*cos(theta);
     0, 0, 0, 1];
 
 % Definir los parámetros DH para cada articulación
-theta1 = q1; d1 = L1; a1 = L2; alpha1 = pi/2;
-theta2 = q2; d2 = 0; a2 = L3; alpha2 = 0;
-theta3 = q3; d3 = 0; a3 = L4; alpha3 = 0;
+theta1 = q1; d1 = handles.L1; a1 = handles.L2; alpha1 = pi/2;
+theta2 = q2; d2 = 0; a2 = handles.L3; alpha2 = 0;
+theta3 = q3; d3 = 0; a3 = handles.L4; alpha3 = 0;
 
 % Matrices de transformación homogénea
 A01 = subs(A, {theta, d, a, alpha_}, {theta1, d1, a1, alpha1});
@@ -243,6 +243,45 @@ function btnCalcular_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+% Obtener los valores de posición desde los edits
+    x = str2double(get(handles.edtX, 'String'));
+    y = str2double(get(handles.edtY, 'String'));
+    z = str2double(get(handles.edtZ, 'String'));
+    p = [x; y; z];
+
+    % Cinemática Inversa
+    [q1, q2, q3] = Inversa_q1_q2_q3(p, handles.l);
+
+    % Configuración de las articulaciones
+    q = [q1 q2 q3];
+
+    % Crear enlaces con parámetros DH
+    L(1) = Link([0 handles.L1 handles.L2 pi/2 0]);
+    L(2) = Link([0 0 handles.L3 0 0]);
+    L(3) = Link([0 0 handles.L4 0 0]);
+    RB = SerialLink(L, 'name', 'MiRobot');
+
+    % Definir el espacio de trabajo
+    workspace = [-500 500 -500 500 0 1000];
+
+    % Obtener el handle del axes1 y configurarlo para la gráfica
+    axes(handles.axes1);
+    cla; % Limpiar el axes antes de graficar
+    RB.plot(q, 'workspace', workspace, 'delay', 0);
+
+    % Mostrar los ángulos calculados en la consola
+    disp('Ángulos calculados (Cinemática Inversa):');
+    disp(['q1: ', num2str(rad2deg(q1)), ' grados']);
+    disp(['q2: ', num2str(rad2deg(q2)), ' grados']);
+    disp(['q3: ', num2str(rad2deg(q3)), ' grados']);
+
+    % Mostrar los ángulos en la uitableParametrosDH
+    parametros_DH_data = {
+        rad2deg(q1), handles.L1, handles.L2, pi/2;
+        rad2deg(q2), 0, handles.L3, 0;
+        rad2deg(q3), 0, handles.L4, 0
+    };
+    set(handles.uitableParametrosDH, 'Data', parametros_DH_data);
 
 % --- Executes on slider movement.
 function sliderQ1_Callback(hObject, eventdata, handles)
@@ -377,4 +416,3 @@ function edtQ3_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
-
