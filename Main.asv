@@ -183,7 +183,7 @@ function conectarSerial(hObject, handles)
         handles.serialPort = serialport(portName, baudRate);
         configureTerminator(handles.serialPort, "LF");
         fopen(handles.serialPort);
-          %fprintf(serialPort, '0,0,0');
+        
         set(handles.txtPuerto, 'String', ['Conectado a ' portName]);
         set(hObject, 'BackgroundColor', 'green');
         guidata(hObject, handles);
@@ -287,7 +287,7 @@ end
 function enviarAngulosSerial(q, serialPort)
     % Convierte los ángulos a grados
 
-    q_deg = round(rad2deg(q));
+    q_deg = rad2deg(q);
     % Formatea el mensaje como una cadena de texto con salto de línea al final
     mensaje = sprintf('%d,%d,%d\n', q_deg(1), q_deg(2), q_deg(3));
     % Convierte el mensaje a formato de tipo uint8 (necesario para fwrite)

@@ -24,8 +24,8 @@ function [q1, q2, q3] = Inversa_q1_q2_q3(position, lengths)
     if abs(C) > 1
         error('La posición deseada está fuera del alcance del robot');
     end
-    q3 = atan2(sqrt(1 - C^2), C);
-
+    q33 = (-pi/2)+atan2(sqrt(1 - C^2), C);
+    q3=pi/2+q33;
     % Calcular q2
-    q2 = atan2(h, RT) - atan2(L4 * sqrt(1 - C^2), L3 + L4 * C);
+    q2 = (pi/2)+atan2(h, RT) - atan2(L4 * sqrt(1 - C^2), L3 + L4 * C);
 end
